@@ -11,10 +11,13 @@ import (
 )
 
 const (
-	PERMITTED_ID   = "arn:aws:iam::637423479705:user/testUser"
-	OPENAI_API_KEY = "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"
+	PERMITTED_ID    = "arn:aws:iam::637423479705:user/testUser"
+	OPENAI_API_KEY  = "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"
+	REAL_OPENAI_URL = "https://api.openai.com/v1"
+	FAKE_API_KEY    = "fake_api_key" // This would be a randomly generated secret in the real application.
 )
 
+// Very basic DLP check that looks for matches from a list of forbidden words.
 var FORBIDDEN_WORDS = []string{"passionfruit"}
 var reqs = 0
 var blocked = 0
@@ -33,17 +36,13 @@ func containsSubstring(str, substr string) bool {
 }
 
 func handleOpenAI(c *gin.Context) {
-	remote, err := url.Parse("https://api.openai.com/v1")
-	if err != nil {
-		panic(err)
-	}
 	reqs += 1
-
-	c.Request.Header["Authorization"] = []string{"Bearer " + OPENAI_API_KEY}
 
 	contents, _ := io.ReadAll(c.Request.Body)
 	c.Request.Body = io.NopCloser(bytes.NewReader(contents))
 	contentsStr := string(contents)
+
+	// Check for matches with forbidden words
 	for _, word := range FORBIDDEN_WORDS {
 		if containsSubstring(contentsStr, word) {
 			c.JSON(400, gin.H{
@@ -52,6 +51,21 @@ func handleOpenAI(c *gin.Context) {
 			blocked += 1
 			return
 		}
+	}
+
+	// Rewrite the fake API key that was sent to the client with a real API key.
+	if !containsSubstring(c.Request.Header["Authorization"][0], FAKE_API_KEY) {
+		c.JSON(400, gin.H{
+			"error": "forbidden",
+		})
+		blocked += 1
+		return
+	}
+
+	c.Request.Header["Authorization"] = []string{"Bearer " + OPENAI_API_KEY}
+	remote, err := url.Parse(REAL_OPENAI_URL)
+	if err != nil {
+		panic(err)
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(remote)
@@ -100,7 +114,7 @@ func handleAuth(c *gin.Context) {
 	sb := string(body)
 	if containsSubstring(sb, PERMITTED_ID) {
 		c.JSON(200, gin.H{
-			"key": "api-key",
+			"key": FAKE_API_KEY,
 		})
 		return
 	} else {
@@ -113,8 +127,13 @@ func handleAuth(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
+	// These are the main client routes for accessing various APIs.
+	// In reality there should be some routing logic here to determine which vendor API to call when.
+	// But for now, it's just OpenAI.
 	r.Any("/routes/*proxyPath", handleOpenAI)
+	// This is the route the client would call to prove their identity and get a fake API key.
 	r.Any("/auth", handleAuth)
+	// This route can opened in the browser to get some basic request stats.
 	r.Any("/stats", handleStats)
 
 	r.Run()
