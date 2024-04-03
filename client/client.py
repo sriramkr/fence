@@ -8,10 +8,10 @@ import requests
 
 AUTH_URL = "http://localhost:8080/auth"
 GATEWAY_URL = "http://localhost:8080/routes"
-ACCESS_KEY_ID = "AKIAZI2LGNOM2PZBVP42"
-SECRET_ACCESS_KEY = "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"
-BAD_USER_ACCESS_KEY_ID = "AKIAZI2LGNOMUFYEFJAM"
-BAD_USER_SECRET_ACCESS_KEY = "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"
+ACCESS_KEY_ID = ""
+SECRET_ACCESS_KEY = ""
+BAD_USER_ACCESS_KEY_ID = ""
+BAD_USER_SECRET_ACCESS_KEY = ""
 
 def get_identity_proof():
 	# This is just for a test. In reality, we would absolutely not be checking in 
