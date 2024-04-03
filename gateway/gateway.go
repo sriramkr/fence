@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	PERMITTED_ID    = "arn:aws:iam::637423479705:user/testUser"
-	OPENAI_API_KEY  = "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"
+	PERMITTED_ID    = ""
+	OPENAI_API_KEY  = ""
 	REAL_OPENAI_URL = "https://api.openai.com/v1"
 	FAKE_API_KEY    = "fake_api_key" // This would be a randomly generated secret in the real application.
 )
